@@ -9,6 +9,7 @@ from src.utils.numpy import to_tensor
 SEQUENCE_PATTERN = re.compile(r'^[0-9]{6}_[a-zA-Z]+[0-9]{1}$')
 POSE_FOLDER_PATTERN = re.compile(r'^hdPose3d_stage1(.*)')
 SAMPLE_ID = re.compile(r'^body3DScene_([0-9]+).json$')
+AVAILABLE_MODELS = ['joints15', 'joints19']
 
 
 def is_sequence_folder(s):
