@@ -1,4 +1,3 @@
-import re
 import json
 from argparse import ArgumentParser
 from os import makedirs, walk
@@ -6,17 +5,12 @@ from os.path import join, dirname, exists
 from shutil import rmtree
 from google.protobuf.json_format import MessageToDict
 
-from panoptic_dataset.utils import load_calibrations_pb
-from utils.logger import Logger
+from src.panoptic_dataset.utils import load_calibrations_pb, is_sequence_folder
+from src.utils.logger import Logger
 
 BASEDIR = join(dirname(__file__))
-SEQUENCE_PATTERN = re.compile(r'^[0-9]{6}_[a-zA-Z]+[0-9]{1}$')
 
 log = Logger(name='ConvertCalibs')
-
-
-def is_sequence_folder(s):
-    return SEQUENCE_PATTERN.match(s) is not None
 
 
 def main(dataset_folder, output_folder):

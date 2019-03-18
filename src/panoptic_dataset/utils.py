@@ -1,9 +1,44 @@
+import re
 import json
 from os.path import join, exists, dirname
 import numpy as np
 
 from is_msgs.camera_pb2 import CameraCalibration
-from utils.numpy import to_tensor
+from src.utils.numpy import to_tensor
+
+SEQUENCE_PATTERN = re.compile(r'^[0-9]{6}_[a-zA-Z]+[0-9]{1}$')
+POSE_FOLDER_PATTERN = re.compile(r'^hdPose3d_stage1(.*)')
+SAMPLE_ID = re.compile(r'^body3DScene_([0-9]+).json$')
+
+
+def is_sequence_folder(s):
+    return SEQUENCE_PATTERN.match(s) is not None
+
+
+def is_pose_folder(folder):
+    return POSE_FOLDER_PATTERN.match(folder) is not None
+
+
+def get_joints_key(folder):
+    pose_model = POSE_FOLDER_PATTERN.match(folder).groups()[0]
+    return 'joints19' if pose_model == '_coco19' else 'joints15'
+
+
+def is_sample_file(file):
+    return SAMPLE_ID.match(file) is not None
+
+
+def get_sample_id(file):
+    id_str = SAMPLE_ID.match(file).groups()[0]
+    return int(id_str)
+
+
+def make_df_columns(joints_key):
+    n_joints = int(joints_key.strip('joints'))
+    columns = ['sample_id', 'person_id']
+    for n in range(n_joints):
+        columns += list(map(lambda x: x.format(n), ['j{}x', 'j{}y', 'j{}z', 'j{}c']))
+    return columns
 
 
 def load_calibrations_pb(calibrations_file, referencial=9999, cameras=None):
