@@ -92,7 +92,7 @@ def main(dataset_folder, pose_model, cameras):
 
                 joints_camera_coordinate = to_camera(joints_world_coordinate, K, RT, d)
                 joints_valid_resolution = validate_resolution(joints_camera_coordinate, w, h)
-                invalid_joints = np.logical_and(joints_not_annotated, ~joints_valid_resolution)
+                invalid_joints = np.logical_or(joints_not_annotated, ~joints_valid_resolution)
                 joints_camera_coordinate[:, invalid_joints] = 0.0
 
                 image_pose_data = np.vstack([joints_camera_coordinate, joints_confidences])
@@ -101,6 +101,11 @@ def main(dataset_folder, pose_model, cameras):
                 df_columns = list(filter(lambda x: 'z' not in x, list(df.columns)))
                 data = np.hstack([df_ids, image_pose_data])
                 df_image = pd.DataFrame(data=data, columns=df_columns)
+
+                # drop invalid annotations, i.e., all x and y coordinates equals to zero
+                invalid_rows = (df_image.filter(regex='^j[0-9]+[xy]$') == 0.0).all(axis=1)
+                invalid_indexes = df_image[invalid_rows].index
+                df_image.drop(invalid_indexes, inplace=True)
 
                 log.info("Writing data from sequence {}, pose model {}, camera {}", s_folder,
                          p_model, camera)
