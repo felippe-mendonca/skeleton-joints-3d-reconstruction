@@ -29,8 +29,8 @@ def data_frame_to_object_annotations(annotations, model, has_z=False, frame_id=0
     annotations_pb = ObjectAnnotations()
     annotations_pb.frame_id = frame_id
     if resolution is not None:
-        annotations.resolution.width = resolution[0]
-        annotations.resolution.height = resolution[1]
+        annotations_pb.resolution.width = resolution[0]
+        annotations_pb.resolution.height = resolution[1]
 
     for _, annotation in annotations.iterrows():
         skeleton = annotations_pb.objects.add()

@@ -76,7 +76,7 @@ def main(dataset_folder, output_folder):
             annotations_file_path = join(output_folder_path, 'data.csv')
             df.to_csv(path_or_buf=annotations_file_path, header=True, index=False)
 
-            info_file_path = join(output_folder_path, 'info.json')
+            info_file_path = join(output_folder, s_folder, 'info.json')
             info = {
                 'begin': get_sample_id(pose_files[0]),
                 'end': get_sample_id(pose_files[-1]),
