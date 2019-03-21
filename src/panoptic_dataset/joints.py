@@ -1,5 +1,13 @@
+from src.panoptic_dataset.utils import is_valid_model
 from is_msgs.image_pb2 import HumanKeypoints as HKP
 
+
+def _reverse_model_joints(joints_list):
+    reverse_list = [-1] * (max(joints_list) + 1)
+    for joint_index, human_keypoint in enumerate(joints_list):
+        reverse_list[human_keypoint] = joint_index
+
+    return reverse_list
 
 MODEL_15_JOINTS = [
     HKP.Value('NECK'),           \
@@ -42,6 +50,9 @@ MODEL_19_JOINTS = [
     HKP.Value('RIGHT_EAR')
 ]
 
+MODEL_15_JOINTS_REVERSED = _reverse_model_joints(MODEL_15_JOINTS)
+MODEL_19_JOINTS_REVERSED = _reverse_model_joints(MODEL_19_JOINTS)
+
 MODEL_15_LINKS = []
 
 MODEL_19_LINKS = [
@@ -66,20 +77,38 @@ MODEL_19_LINKS = [
 
 def index_to_human_keypoint(index, model):
 
+    is_valid_model(model)
+
     INVALID_INDEX_MSG = "Invalid index for model {}. Must be less then {}"
 
     if model == 'joints15':
-        keypoints = MODEL_15_JOINTS
+        human_keypoints = MODEL_15_JOINTS
     elif model == 'joints19':
-        keypoints = MODEL_19_JOINTS
-    else:
-        raise Exception("Invalid Model passed. Can be either 'joints15' or 'joints19'")
+        human_keypoints = MODEL_19_JOINTS
 
-    n_joints = len(keypoints)
+    n_joints = len(human_keypoints)
     if index >= n_joints:
         raise Exception(INVALID_INDEX_MSG.format(model, n_joints))
 
-    return keypoints[index]
+    return human_keypoints[index]
+
+
+def human_keypoint_to_index(human_keypoint, model):
+
+    is_valid_model(model)
+
+    INVALID_HUMAN_KEYPOINT_MSG = "Invalid HumanKeypoint for model {}."
+
+    if model == 'joints15':
+        joint_indexes = MODEL_15_JOINTS_REVERSED
+    elif model == 'joints19':
+        joint_indexes = MODEL_19_JOINTS_REVERSED
+
+    joint_index = joint_indexes[human_keypoint]
+    if joint_index == -1:
+        raise Exception(INVALID_HUMAN_KEYPOINT_MSG.format(model))
+
+    return joint_index
 
 
 def get_joint_links(model):

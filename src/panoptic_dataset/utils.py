@@ -13,6 +13,11 @@ AVAILABLE_MODELS = ['joints15', 'joints19']
 RESOLUTION = (1920, 1080)
 
 
+def is_valid_model(model):
+    if model not in AVAILABLE_MODELS:
+        raise Exception("Invalid Model: {}. Can be either 'joints15' or 'joints19'", model)
+
+
 def is_sequence_folder(s):
     return SEQUENCE_PATTERN.match(s) is not None
 
@@ -35,11 +40,12 @@ def get_sample_id(file):
     return int(id_str)
 
 
-def make_df_columns(joints_key):
-    n_joints = int(joints_key.strip('joints'))
+def make_df_columns(pose_model, has_z=True):
+    joint_data_keys =  ['j{}x', 'j{}y', 'j{}z', 'j{}c'] if has_z else ['j{}x', 'j{}y', 'j{}c']
     columns = ['sample_id', 'person_id']
+    n_joints = int(pose_model.strip('joints'))
     for n in range(n_joints):
-        columns += list(map(lambda x: x.format(n), ['j{}x', 'j{}y', 'j{}z', 'j{}c']))
+        columns += list(map(lambda x: x.format(n), joint_data_keys))
     return columns
 
 
