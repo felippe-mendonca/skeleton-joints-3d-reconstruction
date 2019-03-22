@@ -69,7 +69,7 @@ def main(sequence_folder, output_folder, pose_model, cameras, broker_uri, min_re
     request_manager = RequestManager(
         channel=channel, max_requests=max_requests, min_requests=min_requests)
 
-    sequence_name = basename(dirname(sequence_folder))
+    sequence_name = basename(dirname(sequence_folder + '/'))
     received_data = []
     while True:
 
@@ -202,8 +202,13 @@ if __name__ == '__main__':
             no_dash_key = arg_key.split('--')[-1]
             if no_dash_key in args_from_file:
                 arg_values = args_from_file[no_dash_key]
-                if type(arg_values) == list:
+                type_arg_values = type(arg_values)
+                if type_arg_values == list:
                     arg_values = list(map(str, arg_values))
+                elif type_arg_values == int:
+                    arg_values = [str(arg_values)]
+                elif type_arg_values == bool:
+                    arg_values = []
                 else:
                     arg_values = [arg_values]
                 parsed_from_file.extend([arg_key] + arg_values)
