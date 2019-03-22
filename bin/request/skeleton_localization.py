@@ -1,5 +1,4 @@
 import json
-from argparse import ArgumentParser
 from sys import exit
 from os import makedirs, walk
 from os.path import join, dirname, exists, basename
@@ -9,6 +8,7 @@ import pandas as pd
 
 from is_wire.core import Channel, Logger
 from is_msgs.image_pb2 import ObjectAnnotations
+from src.utils.arparse import ArgumentParserFile
 from src.utils.proto.group_request_pb2 import MultipleObjectAnnotations
 from src.utils.is_wire import RequestManager
 from src.utils.is_msgs import data_frame_to_object_annotations, object_annotations_to_np
@@ -116,18 +116,7 @@ def main(sequence_folder, output_folder, pose_model, cameras, broker_uri, min_re
 
 
 if __name__ == '__main__':
-    parser = ArgumentParser(add_help=False)
-
-    parser.add_argument(
-        '--config-file',
-        type=str,
-        required=False,
-        help="""JSON configuration file with parameters. Arguments passed on
-        command line will overwrite configuration file.""")
-    parser.add_argument('--help', '-h', action='store_true')
-
-    args, unknown = parser.parse_known_args()
-
+    parser = ArgumentParserFile(parse_from_file=True)
     parser.add_argument(
         '--sequence-folder',
         type=str,
@@ -188,32 +177,7 @@ if __name__ == '__main__':
         help="""ResquestManager parameter. Amount of time to a sent message receive a 
         response. In case of reach this deadline, RequestManager will retry indefinitely.""")
 
-    parsed_from_file = []
-
-    if args.help:
-        parser.print_help()
-        exit(-1)
-    elif args.config_file is not None:
-        with open(args.config_file, 'r') as f:
-            args_from_file = json.load(f)
-        for arg_key in parser._option_string_actions.keys():
-            if not arg_key.startswith('--'):
-                continue
-            no_dash_key = arg_key.split('--')[-1]
-            if no_dash_key in args_from_file:
-                arg_values = args_from_file[no_dash_key]
-                type_arg_values = type(arg_values)
-                if type_arg_values == list:
-                    arg_values = list(map(str, arg_values))
-                elif type_arg_values == int:
-                    arg_values = [str(arg_values)]
-                elif type_arg_values == bool:
-                    arg_values = []
-                else:
-                    arg_values = [arg_values]
-                parsed_from_file.extend([arg_key] + arg_values)
-
-    args = parser.parse_args(parsed_from_file + unknown)
+    args = parser.parse_args()
 
     main(
         sequence_folder=args.sequence_folder,
