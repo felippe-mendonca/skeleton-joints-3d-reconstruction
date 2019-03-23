@@ -1,11 +1,16 @@
 import socket
 from enum import Enum
-from is_wire.core import Subscription, Message, Logger
+from is_wire.core import Subscription, Message, Logger, Tracer
 from is_wire.core.utils import now
 
 
 class RequestManager:
-    def __init__(self, channel, max_requests, min_requests=None, log_level=Logger.INFO):
+    def __init__(self,
+                 channel,
+                 max_requests,
+                 min_requests=None,
+                 log_level=Logger.INFO,
+                 zipkin_exporter=None):
 
         if min_requests is None:
             min_requests = max_requests
@@ -16,6 +21,10 @@ class RequestManager:
 
         self._channel = channel
         self._subscription = Subscription(self._channel)
+
+        self._do_tracing = zipkin_exporter is not None
+        if self._do_tracing:
+            self._tracer = Tracer(exporter=zipkin_exporter)
 
         self._log = Logger(name='RequestManager')
         self._log.set_level(level=log_level)
@@ -38,12 +47,21 @@ class RequestManager:
             raise Exception("Can't request more than {}. Use 'RequestManager.can_request' "
                             "method to check if you can do requests.")
 
+        span = self._tracer.start_span(name='request') if self._do_tracing else None
+
         msg = Message(content=content)
         msg.topic = topic
         msg.reply_to = self._subscription
         msg.timeout = timeout_ms / 1000.0
 
         self._log.debug("[Sending] metadata={}, cid={}", metadata, msg.correlation_id)
+
+        if self._do_tracing:
+            for key, value in (metadata or {}).items():
+                span.add_attribute(key, value)
+            self._tracer.end_span()
+            msg.inject_tracing(span)
+
         self._publish(msg, metadata)
 
         if len(self._requests) >= self._max_requests:

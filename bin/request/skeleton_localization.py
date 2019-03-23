@@ -3,10 +3,12 @@ from sys import exit
 from os import makedirs, walk
 from os.path import join, dirname, exists, basename
 from shutil import rmtree
+from urllib.parse import urlparse
 import numpy as np
 import pandas as pd
 
 from is_wire.core import Channel, Logger
+from is_wire.core import ZipkinExporter, BackgroundThreadTransport
 from is_msgs.image_pb2 import ObjectAnnotations
 from src.utils.arparse import ArgumentParserFile
 from src.utils.proto.group_request_pb2 import MultipleObjectAnnotations
@@ -17,7 +19,7 @@ from src.panoptic_dataset.utils import is_valid_model, make_df_columns, RESOLUTI
 log = Logger(name='SkeletonLocalization')
 
 
-def main(sequence_folder, output_folder, pose_model, cameras, broker_uri, min_requests,
+def main(sequence_folder, output_folder, pose_model, cameras, broker_uri, zipkin_uri, min_requests,
          max_requests, timeout_ms):
 
     info_file_path = join(sequence_folder, 'info.json')
@@ -66,27 +68,49 @@ def main(sequence_folder, output_folder, pose_model, cameras, broker_uri, min_re
     sample_ids = list(range(sequence_info['begin'], sequence_info['end'] + 1))
 
     channel = Channel(broker_uri)
+    zipkin_exporter = None
+
+    if zipkin_uri is not None:
+        zipkin_uri = urlparse(zipkin_uri)
+        zipkin_exporter = ZipkinExporter(
+            service_name="RequestSkeletonsLocalization",
+            host_name=zipkin_uri.hostname,
+            port=zipkin_uri.port,
+            transport=BackgroundThreadTransport(max_batch_size=100),
+        )
+
     request_manager = RequestManager(
-        channel=channel, max_requests=max_requests, min_requests=min_requests)
+        channel=channel,
+        zipkin_exporter=zipkin_exporter,
+        max_requests=max_requests,
+        min_requests=min_requests)
 
     sequence_name = basename(dirname(sequence_folder + '/'))
+    experiment_name = basename(dirname(output_folder + '/'))
     received_data = []
     while True:
 
         while request_manager.can_request() and len(sample_ids) > 0:
             sample_id = sample_ids.pop(0)
             request = make_request(sample_id)
+            metadata = {
+                "sample_id": sample_id,
+                "experiment": experiment_name,
+                "sequence": sequence_name,
+            }
             request_manager.request(
                 content=request,
                 topic="SkeletonsGrouper.Localize",
                 timeout_ms=timeout_ms,
-                metadata=sample_id)
+                metadata=metadata)
             log.info("[{}] [{:>3s}] {}", sequence_name, ">>", sample_id)
 
         received_msgs = request_manager.consume_ready(timeout=1.0)
 
-        for msg, received_sample_id in received_msgs:
+        for msg, received_metadata in received_msgs:
             localizations = msg.unpack(ObjectAnnotations)
+            received_sample_id = received_metadata['sample_id']
+
             localizations_array = object_annotations_to_np(
                 annotations_pb=localizations,
                 model=pose_model,
@@ -155,6 +179,11 @@ if __name__ == '__main__':
         default='amqp://localhost:5672',
         help="""RabbitMQ Broker URI to connect and send request to SkeletonGrouper.Localize.""")
     parser.add_argument(
+        '--zipkin-uri',
+        type=str,
+        required=False,
+        help="""Zipkin URI to export tracings from requests.""")
+    parser.add_argument(
         '--min-requests',
         type=int,
         required=False,
@@ -185,6 +214,7 @@ if __name__ == '__main__':
         pose_model=args.pose_model,
         cameras=args.cameras,
         broker_uri=args.broker_uri,
+        zipkin_uri=args.zipkin_uri,
         min_requests=args.min_requests,
         max_requests=args.max_requests,
         timeout_ms=args.timeout_ms)
