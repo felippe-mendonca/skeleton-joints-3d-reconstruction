@@ -23,8 +23,7 @@ class RequestManager:
         self._subscription = Subscription(self._channel)
 
         self._do_tracing = zipkin_exporter is not None
-        if self._do_tracing:
-            self._tracer = Tracer(exporter=zipkin_exporter)
+        self._zipkin_exporter = zipkin_exporter
 
         self._log = Logger(name='RequestManager')
         self._log.set_level(level=log_level)
@@ -47,7 +46,8 @@ class RequestManager:
             raise Exception("Can't request more than {}. Use 'RequestManager.can_request' "
                             "method to check if you can do requests.")
 
-        span = self._tracer.start_span(name='request') if self._do_tracing else None
+        tracer = Tracer(exporter=self._zipkin_exporter) if self._do_tracing else None
+        span = tracer.start_span(name='request') if self._do_tracing else None
 
         msg = Message(content=content)
         msg.topic = topic
@@ -59,7 +59,7 @@ class RequestManager:
         if self._do_tracing:
             for key, value in (metadata or {}).items():
                 span.add_attribute(key, value)
-            self._tracer.end_span()
+            tracer.end_span()
             msg.inject_tracing(span)
 
         self._publish(msg, metadata)
