@@ -38,6 +38,11 @@ def main(sequence_folder, output_folder, info_folder, pose_model, broker_uri, zi
             sequence_info = json.load(f)
         begin_id, end_id = sequence_info['begin'], sequence_info['end']
     
+    output_folder_path = join(output_folder, sequence_name, pose_model)
+    if exists(output_folder_path):
+        rmtree(output_folder_path)
+    makedirs(output_folder_path)
+
     channel = Channel(broker_uri)
     zipkin_exporter = None
 
@@ -113,13 +118,7 @@ def main(sequence_folder, output_folder, info_folder, pose_model, broker_uri, zi
                 df = pd.DataFrame(data=received_data, columns=columns)
                 df.sort_values(by=['sample_id', 'person_id'], axis='rows', inplace=True)
 
-                output_folder_path = join(output_folder, sequence_name, pose_model)
-
-                if exists(output_folder_path):
-                    rmtree(output_folder_path)
-                makedirs(output_folder_path)
                 output_file_path = join(output_folder_path, '{}.csv'.format(camera_id))
-
                 log.info("Saving results on {}", output_file_path)
                 df.to_csv(path_or_buf=output_file_path, header=True, index=False)
 
