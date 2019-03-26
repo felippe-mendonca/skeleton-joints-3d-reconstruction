@@ -1,0 +1,92 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: is-skeletons-grouper-rpc-config
+  namespace: experiments
+data:
+  config: |-
+    {
+      "broker_uri": "amqp://rabbitmq.experiments",
+      "zipkin_host": "zipkin.experiments",
+      "zipkin_port": 9411,
+      "id": 0,
+      "cameras": {
+        "0" : {},
+        "1" : {},
+        "2" : {},
+        "3" : {},
+        "4" : {},
+        "5" : {},
+        "6" : {},
+        "7" : {},
+        "8" : {},
+        "9" : {},
+        "10" : {},
+        "11" : {},
+        "12" : {},
+        "13" : {},
+        "14" : {},
+        "15" : {},
+        "16" : {},
+        "17" : {},
+        "18" : {},
+        "19" : {},
+        "20" : {},
+        "21" : {},
+        "22" : {},
+        "23" : {},
+        "24" : {},
+        "25" : {},
+        "26" : {},
+        "27" : {},
+        "28" : {},
+        "29" : {},
+        "30" : {},
+      },
+      "referential": 9999,
+      "min_error": 50.0,
+      "min_score": 0.0,
+      "max_distance": 75.0,
+      "period_ms": 100,
+      "release_samples": 5
+    }
+
+---
+
+apiVersion: extensions/v1beta1 
+kind: Deployment
+metadata:
+  name: "is-skeletons-grouper-rpc"
+  namespace: experiments
+spec:
+  replicas: 6 
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: is-skeletons-grouper-rpc
+    spec:
+      nodeSelector:
+        experiments: fifi
+      containers:
+      - name: service 
+        image: labviros/is-skeletons-grouper:0.0.4
+        command: ["./rpc.bin"]
+        args: ["/opt/options/options.json"]
+        imagePullPolicy: Always
+        resources:
+          limits: 
+            cpu: "1.0"
+            memory: 128Mi
+        volumeMounts:
+          - name: options
+            mountPath: /opt/options
+      terminationGracePeriodSeconds: 1
+      volumes:
+      - name: options
+        configMap:
+          name: is-skeletons-grouper-rpc-config
+          items:
+          - key: config
+            path: options.json

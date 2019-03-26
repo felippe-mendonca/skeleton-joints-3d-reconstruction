@@ -11,6 +11,7 @@ POSE_FOLDER_PATTERN = re.compile(r'^hdPose3d_stage1(.*)')
 SAMPLE_ID = re.compile(r'^body3DScene_([0-9]+).json$')
 AVAILABLE_MODELS = ['joints15', 'joints19']
 RESOLUTION = (1920, 1080)
+VIDEO_FILE_PATTERN = re.compile(r'^hd_00_([0-9]{2}).mp4')
 
 
 def is_valid_model(model):
@@ -40,8 +41,17 @@ def get_sample_id(file):
     return int(id_str)
 
 
+def is_video_file(file):
+    return VIDEO_FILE_PATTERN.match(file) is not None
+
+
+def get_camera_id(file):
+    match = VIDEO_FILE_PATTERN.match(file)
+    return -1 if match is None else int(match.groups()[0])
+
+
 def make_df_columns(pose_model, has_z=True):
-    joint_data_keys =  ['j{}x', 'j{}y', 'j{}z', 'j{}c'] if has_z else ['j{}x', 'j{}y', 'j{}c']
+    joint_data_keys = ['j{}x', 'j{}y', 'j{}z', 'j{}c'] if has_z else ['j{}x', 'j{}y', 'j{}c']
     columns = ['sample_id', 'person_id']
     n_joints = int(pose_model.strip('joints'))
     for n in range(n_joints):

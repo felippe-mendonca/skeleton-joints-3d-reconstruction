@@ -15,5 +15,5 @@ sleep 5
 
 sed -e "s/{sequence_folder}/${DATASET}_haggling1/g" $EXP_FOLDER/request_options.json >&1 | tee /tmp/request_options.json
 cd $REQUEST_FOLDER
-python3 -m bin.request.skeleton_localization --config-file /tmp/request_options.json
+screen -S "exp" -d -m bash -c 'python3 -m bin.request.skeleton_localization --config-file /tmp/request_options.json; exec bash'
 cd $CURRENT_FOLDER
