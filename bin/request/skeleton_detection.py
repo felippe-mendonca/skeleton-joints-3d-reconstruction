@@ -55,18 +55,18 @@ def main(sequence_folder, output_folder, info_folder, pose_model, broker_uri, zi
             transport=BackgroundThreadTransport(max_batch_size=100),
         )
 
+    request_manager = RequestManager(
+        channel=channel,
+        zipkin_exporter=zipkin_exporter,
+        max_requests=max_requests,
+        min_requests=min_requests)
+
     for video_file in video_files:
         video_file_path = join(sequence_folder, video_file)
 
         video_iterator = VideoIterator(video_file_path)
         it_range = range(begin_id, end_id + 1)
         data_iterator = zip(it_range, video_iterator.in_range(it_range))
-
-        request_manager = RequestManager(
-            channel=channel,
-            zipkin_exporter=zipkin_exporter,
-            max_requests=max_requests,
-            min_requests=min_requests)
 
         received_data = []
         camera_id = get_camera_id(video_file)
