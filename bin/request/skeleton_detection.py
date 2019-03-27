@@ -38,7 +38,7 @@ def main(sequence_folder, output_folder, info_folder, pose_model, broker_uri, zi
             sequence_info = json.load(f)
         begin_id, end_id = sequence_info['begin'], sequence_info['end']
     
-    output_folder_path = join(output_folder, sequence_name, pose_model)
+    output_folder_path = join(output_folder, sequence_name, '2d_annotations', pose_model)
     if exists(output_folder_path):
         rmtree(output_folder_path)
     makedirs(output_folder_path)

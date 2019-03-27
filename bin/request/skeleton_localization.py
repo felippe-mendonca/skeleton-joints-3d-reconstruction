@@ -19,10 +19,10 @@ from src.panoptic_dataset.utils import is_valid_model, make_df_columns, RESOLUTI
 log = Logger(name='SkeletonLocalization')
 
 
-def main(sequence_folder, output_folder, pose_model, cameras, broker_uri, zipkin_uri, min_requests,
-         max_requests, timeout_ms):
+def main(sequence_folder, info_folder, output_folder, pose_model, cameras, broker_uri, zipkin_uri,
+         min_requests, max_requests, timeout_ms):
 
-    info_file_path = join(sequence_folder, 'info.json')
+    info_file_path = join(info_folder if info_folder is not None else sequence_folder, 'info.json')
     if not exists(info_file_path):
         log.critical("'{}' file doesn't exist.", info_file_path)
 
@@ -151,6 +151,13 @@ if __name__ == '__main__':
         the sequence folder might have a 'info.json' file that is generated
         by running the 'convert_3d_annotations' script.""")
     parser.add_argument(
+        '--info-folder',
+        type=str,
+        required=False,
+        help="""Path to folder, containing a folder inside with the sequence name, 
+        and inside that a 'info.json' with begin and end ids of the sequence. 
+        If no specified, will be look for inside sequence folder.""")
+    parser.add_argument(
         '--output-folder',
         type=str,
         required=True,
@@ -211,6 +218,7 @@ if __name__ == '__main__':
     main(
         sequence_folder=args.sequence_folder,
         output_folder=args.output_folder,
+        info_folder=args.info_folder,
         pose_model=args.pose_model,
         cameras=args.cameras,
         broker_uri=args.broker_uri,
