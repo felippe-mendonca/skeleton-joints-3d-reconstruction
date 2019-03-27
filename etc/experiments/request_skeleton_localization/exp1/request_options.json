@@ -5,5 +5,5 @@
   "cameras": [1, 7, 10, 17, 28],
   "min-requests": 200,
   "max-requests": 400,
-  "output-folder": "/home/felippe/dataset/panoptic-dataset-experiments/exp1"
+  "output-folder": "/home/felippe/panoptic-dataset-experiments/exp1"
 }
