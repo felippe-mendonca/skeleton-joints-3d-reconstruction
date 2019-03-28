@@ -1,8 +1,8 @@
 {
   "broker-uri": "amqp://10.10.2.1:31000",
   "zipkin-uri": "http://10.10.2.1:31200",
-  "sequence-folder": "/home/felippe/dataset/panoptic-dataset/{sequence_folder}",
-  "cameras": [0, 3, 5, 8, 23],
+  "sequence-folder": "/home/felippe/datasets/panoptic-dataset-processed/{sequence_folder}",
+  "cameras": [0, 3, 7, 10, 23],
   "min-requests": 200,
   "max-requests": 400,
   "output-folder": "/home/felippe/panoptic-dataset-experiments/exp0"
