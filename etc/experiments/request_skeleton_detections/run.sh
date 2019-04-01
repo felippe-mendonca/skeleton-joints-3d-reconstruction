@@ -1,5 +1,5 @@
 #!/bin/bash
-EXP="exp0"
+EXP=$1
 
 kubectl delete -f ${EXP}/detector.yaml
 kubectl apply -f ${EXP}/detector.yaml
